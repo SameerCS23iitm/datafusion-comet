@@ -1,0 +1,36 @@
+
+name: Cargo Vendor
+on:
+  workflow_dispatch:
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 5b65d6c
+
+      - name: Vendor dependencies
+        working-directory: native
+        run: cargo vendor
+
+      - name: Create cargo config
+        run: |
+          mkdir -p native/.cargo
+          cat > native/.cargo/config.toml << 'EOF'
+          [source.crates-io]
+          replace-with = "vendored-sources"
+
+          [source."vendored-sources"]
+          directory = "vendor"
+          EOF
+
+      - name: Upload vendor archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: comet-vendor
+          path: |
+            native/vendor
+            native/.cargo/config.toml
+          retention-days: 5
